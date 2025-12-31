@@ -1,0 +1,7 @@
+wget https://sourceforge.net/projects/pdip/files/2.4.7/pdip_src-2.4.7.tgz/download
+tar -zxf pdip_src-2.4.7.tgz
+cd pdip_src-2.4.7/
+patch -p1 < ../ishell-patch-pdip-2.4.7.diff
+./pdip_install.sh -B
+
+At this point the tests will fail, but the so and the binary is built in the src. Now you can copy the pdiplib.so into the Smalltalk lib.

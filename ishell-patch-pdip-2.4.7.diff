@@ -1,0 +1,48 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 72cb4ca..2b0d561 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-cmake_minimum_required(VERSION 2.6)
++cmake_minimum_required(VERSION 3.5)
+ 
+ PROJECT(pdip C)
+ 
+diff --git a/src/pdip.h b/src/pdip.h
+index 8900a25..ed939ba 100644
+--- a/src/pdip.h
++++ b/src/pdip.h
+@@ -321,6 +321,11 @@ extern int pdip_recv(
+                               // is set
+ 
+ 
++extern int pdip_send_formatted(
++      pdip_t ctx,
++      const char *formatted_str   
++                       );
++
+ // ----------------------------------------------------------------------------
+ // Name   : pdip_send
+ // Usage  : Send a formated string to the controlled process
+diff --git a/src/pdip_lib.c b/src/pdip_lib.c
+index 6fde469..be8fac5 100644
+--- a/src/pdip_lib.c
++++ b/src/pdip_lib.c
+@@ -1256,7 +1256,16 @@ end_regex:
+ 
+ } // pdip_recv
+ 
+-
++// 
++// Extra fn for iShell
++// 
++int pdip_send_formatted(
++      pdip_t ctx,
++      const char *formatted_str   
++                       )
++{
++    return pdip_send(ctx, "%s", formatted_str);
++}
+ 
+ // ----------------------------------------------------------------------------
+ // Name   : pdip_send
