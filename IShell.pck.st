@@ -1,6 +1,6 @@
-'From Cuis7.2 [latest update: #6897] on 30 December 2025 at 1:19:04 pm'!
+'From Cuis7.2 [latest update: #6897] on 31 December 2025 at 12:12:03 pm'!
 'Description '!
-!provides: 'IShell' 1 181!
+!provides: 'IShell' 1 183!
 !requires: 'FFI' 1 47 nil!
 !requires: 'Tests-FFI' 1 6 nil!
 !requires: 'CtuMem' 1 46 nil!
@@ -271,6 +271,21 @@ delete
 	(rc = 0) ifFalse: [
 		IShellError error: 'pdip_delete failed'.	
 	].! !
+
+!IShell methodsFor: 'exec:' stamp: 'ct 12/31/2025 12:11:43'!
+receiveToEndWithTimeout: seconds retryDelay: millis
+	| data output |
+
+	data := self receiveWithTimeout: seconds.
+	output := data.
+
+	[data size > 0] whileTrue: [
+		(Delay forMilliseconds: millis) wait.
+		data := self receiveWithTimeout: seconds.
+		output := output, data.
+	].
+	
+	^output.! !
 
 !IShell methodsFor: 'exec:' stamp: 'ct 12/30/2025 11:14:25'!
 receiveWithTimeout: seconds
