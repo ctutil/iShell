@@ -1,6 +1,6 @@
-'From Cuis7.2 [latest update: #6897] on 31 December 2025 at 1:40:13 pm'!
+'From Cuis7.2 [latest update: #6897] on 1 January 2026 at 7:24:57 pm'!
 'Description '!
-!provides: 'IShell' 1 184!
+!provides: 'IShell' 1 190!
 !requires: 'FFI' 1 47 nil!
 !requires: 'Tests-FFI' 1 6 nil!
 !requires: 'CtuMem' 1 46 nil!
@@ -39,7 +39,7 @@ Timeval class
 
 !classDefinition: #IShell category: #IShell!
 Object subclass: #IShell
-	instanceVariableNames: 'cfgt ctuMem pdip displayString displayDPtr displaySize dataSize'
+	instanceVariableNames: 'cfgt ctuMem pdip displayString displayDPtr displaySize dataSize lastSentSize'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'IShell'!
@@ -212,10 +212,12 @@ fields
 	(tv_usec 'uint64') 
 	)! !
 
-!IShell methodsFor: 'initialization' stamp: 'ct 12/30/2025 10:49:55'!
+!IShell methodsFor: 'initialization' stamp: 'ct 1/1/2026 19:04:28'!
 initialize
 	" with default configuration "
 	| rc |
+	
+	lastSentSize := 0.
 	
 	cfgt := PdipCfgT new.
 	rc := self pdip_cfg_init: (cfgt getHandle).
@@ -276,7 +278,7 @@ delete
 receiveToEndWithTimeout: seconds
 	^self receiveToEndWithTimeout: seconds retryDelay: (IShell DEFAULT_RETRY_DELAY).! !
 
-!IShell methodsFor: 'exec:' stamp: 'ct 12/31/2025 12:11:43'!
+!IShell methodsFor: 'exec:' stamp: 'ct 1/1/2026 19:23:28'!
 receiveToEndWithTimeout: seconds retryDelay: millis
 	| data output |
 
@@ -289,33 +291,37 @@ receiveToEndWithTimeout: seconds retryDelay: millis
 		output := output, data.
 	].
 	
+	output := self truncateSentDataFrom: output.
+	
 	^output.! !
 
-!IShell methodsFor: 'exec:' stamp: 'ct 12/30/2025 11:14:25'!
+!IShell methodsFor: 'exec:' stamp: 'ct 1/1/2026 19:15:10'!
 receiveWithTimeout: seconds
-	| rc output timeval |
+	| rc output timeval responseFullSize |
 	
 	timeval := Timeval new tv_sec: seconds; tv_usec: 0; yourself.
 	
 	rc := self pdip_recv: pdip regex: nil display: displayDPtr displaySize: displaySize dataSize: dataSize timeout: (timeval getHandle).
 	
 	output := String new.
-	1 to: ((dataSize longPointerAt: 1) asInteger) do: [ :x | 
+
+	responseFullSize := (dataSize longPointerAt: 1) asInteger.
+
+	1 to: responseFullSize do: [ :x | 
 		| incomingChar |
-		incomingChar  := (Character codePoint: ((displayString pointerAt: x) at: 1)).
-		
-		" (incomingChar codePoint >= 32) ifTrue: [ "
-			output := output, (incomingChar asString).
-		" ]. "
+		incomingChar  := (Character codePoint: ((displayString pointerAt: x) at: 1)).		
+		output := output, (incomingChar asString).
 	].
 
 	^output.! !
 
-!IShell methodsFor: 'exec:' stamp: 'ct 12/30/2025 11:19:19'!
+!IShell methodsFor: 'exec:' stamp: 'ct 1/1/2026 19:05:39'!
 send: aString
 	| sentDataSize |
 	
 	sentDataSize := self pdip_send_formatted: pdip message: aString.
+	" We need this at the incoming, because we will skip from there our sent string"
+	lastSentSize := sentDataSize.
 	
 	^sentDataSize.! !
 
@@ -340,6 +346,11 @@ sendWithLf: aString andWait: seconds
 	(Delay forSeconds: seconds) wait.
 	
 	^sentDataSize.! !
+
+!IShell methodsFor: 'exec:' stamp: 'ct 1/1/2026 19:24:53'!
+truncateSentDataFrom: output
+	"receiveToEnd* messages do this automatically. "
+	^output copyFrom: (lastSentSize + 1) to: (output size).! !
 
 !IShell methodsFor: 'initialize' stamp: 'ct 12/30/2025 10:18:40'!
 exec: commands
