@@ -1,6 +1,6 @@
-'From Cuis7.2 [latest update: #6897] on 1 January 2026 at 7:24:57 pm'!
+'From Cuis7.2 [latest update: #6897] on 2 January 2026 at 9:16:19 pm'!
 'Description '!
-!provides: 'IShell' 1 190!
+!provides: 'IShell' 1 191!
 !requires: 'FFI' 1 47 nil!
 !requires: 'Tests-FFI' 1 6 nil!
 !requires: 'CtuMem' 1 46 nil!
@@ -294,6 +294,27 @@ receiveToEndWithTimeout: seconds retryDelay: millis
 	output := self truncateSentDataFrom: output.
 	
 	^output.! !
+
+!IShell methodsFor: 'exec:' stamp: 'ct 1/2/2026 21:14:56'!
+receiveToEndWithTimeout: seconds retryDelay: millis toStringPresent: search
+	| data output |
+
+	data := self receiveWithTimeout: seconds.
+	output := data.
+
+	[0 = (output findString: search startingAt: (lastSentSize + 1))] whileTrue: [
+		(Delay forMilliseconds: millis) wait.	
+		data := self receiveWithTimeout: seconds.
+		output := output, data.
+	].
+	
+	output := self truncateSentDataFrom: output.
+	
+	^output.! !
+
+!IShell methodsFor: 'exec:' stamp: 'ct 1/2/2026 21:15:08'!
+receiveToEndWithTimeout: seconds toStringPresent: search
+	^self receiveToEndWithTimeout: seconds retryDelay: (IShell DEFAULT_RETRY_DELAY) toStringPresent: search.! !
 
 !IShell methodsFor: 'exec:' stamp: 'ct 1/1/2026 19:15:10'!
 receiveWithTimeout: seconds
